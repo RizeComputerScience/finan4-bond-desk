@@ -217,7 +217,7 @@
         { tol: 1, otherMsg: `Yearly coupon × annuity factor: ${m(t.C)} × ${t.af.toFixed(4)}.` });
       rr[3] = h.judgeNumber(nm(rows[3]), t.PVf, [[1000, 'nodisc', `The $1,000 arrives in ${t.n} years, so discount it: $1,000 ÷ ${g1(t.y)}^${t.n}.`],
         [faceAt(t.c, t.n), 'couprate', `Discount at the market rate, ${pc(t.y)}, not the ${pc(t.c)} coupon rate: $1,000 ÷ ${g1(t.y)}^${t.n}.`], [1000 * Math.pow(1 + t.y / 100, t.n), 'grow', `That grows the $1,000. Divide by ${g1(t.y)}^${t.n} instead of multiplying.`]],
-        { tol: 1, otherMsg: `$1,000 ÷ (1 + market rate)^years. In the calculator: 1000/${g1(t.y)}^${t.n}.` });
+        { tol: 1, otherMsg: `$1,000 ÷ (1 + market rate)^years. In Desmos: 1000/${g1(t.y)}^${t.n}.` });
       const own = isFinite(nm(rows[2])) && isFinite(nm(rows[3])) ? ` Your two values: ${m2(nm(rows[2]))} + ${m2(nm(rows[3]))} = ${m2(nm(rows[2]) + nm(rows[3]))}.` : '';
       rr[4] = h.judgeNumber(nm(rows[4]), t.P, [[1000, 'par', `$1,000 is the price only when the market rate equals the coupon rate. Price = value of the coupons + value of the face value.${own}`],
         [t.PVc + 1000, 'facenodisc', `Add the value today of the face value, ${m2(t.PVf)}, not the full $1,000.`], [t.C * t.n + t.PVf, 'coupnodisc', 'Add the value today of the coupons, not the plain total of the coupons.'], [t.PVf, 'nocoup', 'Add the value today of the coupons too.'], [t.PVc, 'noface', 'Add the value today of the face value too.']],
