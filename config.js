@@ -1,352 +1,269 @@
-/* The Bond Desk: FINAN IV Unit 8 (bonds: price, rates up and price down, two maturities, yield to maturity, Treasury plus a spread). Config for lib/coursedev/desk-engine.
+/* The Bond Desk: FINAN IV Unit 8 (bonds). Config for lib/coursedev/desk-engine.
    Names swept for reuse 2026-11-04 (case_reuse.py --course "FINAN IV"): Northpass, Northpass Resorts, Delphine, Tamura, Delphine Tamura, all clean.
-   Market data (see ../sources/FACTS.md): Treasury par yields on 2026-01-30 (home.treasury.gov daily par yield curve) and Damodaran's January 2026 default spreads by rating.
-   Rework 2026-11-06 (Samuel's Unit 10 review, design/course-principles.md "2026-11-05"; standards rules 17 to 23):
-   - Round seeds. Coupons and market rates in steps 3 and 4 are whole percents, so every coupon is whole dollars and 1 + rate is 1.05 or 1.07.
-     Step 6's coupons are 4%, 5% or 6% and the rise is 1 or 2 points. Step 7's coupon is 2%, 2.5% or 3%. Step 7's yield and step 9's
-     inputs stay the real Treasury yields and spreads. No seed reproduces the exam-style bond (4 years, 6% coupon, 8%).
-   - A 2 to 4 line worked `example` on every task, using small bonds (2 and 10 years) and rates (4%, 5%, 6%) that no seed, the reading
-     or the exam-style question uses.
-   - `parts` on steps 4, 6 and 7, so each answer field sits under its own question.
-   - Citations moved to `sources`; every formula names its cells; feedback quotes the student's own numbers; tolerance sentences removed.
-   - Every step has a right answer, so none uses `autosave` (the note keeps the engine's own save button).
-   seedVersion and version moved to 2, so saved progress and receipts from v1 do not carry over. */
+   Market data (see ../sources/FACTS.md): Treasury par yields on 2026-01-30 (home.treasury.gov daily par yield curve) and Damodaran's
+   January 2026 default spreads by rating, the same six ratings the reading shows.
+   Version 3 (2026-11-12), rebuilt to the Unit 9 pattern (process/standards/interactive-assignments.md rules 25 to 39; u08/TEACHING-MAP.md;
+   design/scope-2026-11-11.md):
+   - The reading teaches; the desk has no walkthrough of its own (rule 32).
+   - Every task states the problem first, then shows a worked example drawn as the SAME table the student fills, read-only, with a
+     different bond and numbers (h.ladder, rule 29). A faded step gives every line but two; the next step leaves every line blank.
+   - Cut from the desk: yield to maturity and RATE, the short-versus-long step, the walkthrough, two of the three light checks.
+   The previous version is in v2-archive/. seedVersion 3 and version 3: progress and receipts from v2 do not carry over. */
 (function (root) {
   'use strict';
-  // Treasury par yield curve, January 30, 2026 (percent). Damodaran, "Ratings, Interest Coverage Ratios and Default Spread", January 2026 (percent).
-  const TSY = { 2: 3.52, 5: 3.79, 7: 4.01, 10: 4.26, 20: 4.82, 30: 4.87 };
-  const SPREAD = [['AA', 0.55], ['A+', 0.70], ['A', 0.78], ['A-', 0.89], ['BBB', 1.11], ['BB+', 1.38], ['BB', 1.84], ['B+', 2.75], ['B', 3.21]];
-  const spr = (r) => SPREAD.find((x) => x[0] === r)[1];
-  const rl = (r) => r.replace('-', '−');
-  const SRC_TSY = 'Treasury yields: US Department of the Treasury, daily par yield curve rates, January 30, 2026.';
-  const SRC_SPR = 'Default spreads: Aswath Damodaran (NYU Stern), “Ratings, Interest Coverage Ratios and Default Spread,” January 2026, large non-financial firms.';
+  // Treasury par yield curve, January 30, 2026 (percent), and Damodaran's January 2026 spreads (percent).
+  const TSY = { 5: 3.79, 7: 4.01, 10: 4.26, 20: 4.82, 30: 4.87 };
+  const SPREAD = { AAA: 0.40, AA: 0.55, A: 0.78, BBB: 1.11, BB: 1.84, B: 3.21 };
+  const SOURCES = 'Treasury yields: US Department of the Treasury, daily par yield curve rates, January 30, 2026. Default spreads: Aswath Damodaran (NYU Stern), “Ratings, Interest Coverage Ratios and Default Spread,” January 2026, large non-financial firms.';
 
   const QUIZ = [
-    { title: 'Quick win: the coupon is fixed',
-      q: 'Northpass sold a 10-year bond with a 6% coupon. A year later, lenders demand 8% on similar loans. What does Northpass now pay each year on each $1,000 of that bond?',
-      options: ['$60, the same as before', '$80, because rates rose', '$70, halfway between the two', 'Nothing until the bond is repaid'],
-      answer: 0,
-      why: ['Right. The coupon is fixed when the bond is sold, so Northpass keeps paying 6% of $1,000, which is $60 a year. What changes is the bond’s price.',
-        'The coupon is set when the bond is sold and stays the same for the bond’s life. A new bond would pay 8%, but this one still pays $60.',
-        'The coupon does not move with market rates at all. It stays at 6% of $1,000, which is $60 a year.',
-        'A bond pays its coupon every year until maturity, then repays the face value. This one pays $60 a year.'] },
-    { title: 'Quick win: why the price fell',
+    { title: 'Quick check: why the price fell',
       q: 'Rates rise, and new $1,000 bonds now pay $70 a year. Why will nobody pay $1,000 for an old bond that pays $50 a year?',
       options: ['For the same $1,000 they can buy a new bond that pays $70 a year', 'The company is now more likely to default', 'The old bond’s face value has fallen', 'The old bond’s coupon is about to be cut'],
       answer: 0,
-      why: ['Right. A buyer will pay less for the old bond, until the $50 coupons plus the $1,000 face value earn the same 7% that a new bond pays.',
+      why: ['Right. Buyers pay less for the old bond, until its $50 coupons plus the $1,000 face value earn the same 7% that a new bond pays.',
         'Nothing here says the company is riskier. The price falls because a new bond pays more for the same money.',
         'The face value stays $1,000 and is still repaid at maturity. The price falls because a new bond pays $70 a year instead of $50.',
         'The coupon is fixed for the bond’s life. The price falls because a new bond pays $70 a year instead of $50.'] },
-    { title: 'Quick win: a downgrade',
-      q: 'A rating agency lowers Northpass’s rating from BBB to BB. What happens next?',
-      options: ['Lenders demand a bigger spread, so new loans cost more and the prices of Northpass’s existing bonds fall', 'The coupons on Northpass’s existing bonds go up', 'Nothing changes until Northpass’s bonds mature', 'Northpass’s existing bonds rise in price, because they now pay more'],
-      answer: 0,
-      why: ['Right. A lower rating means a bigger default spread. New borrowing costs more, and investors pay less for the old bonds, so their yields rise to match.',
-        'The coupons on bonds already sold are fixed. What changes is the yield lenders demand, so the prices of the old bonds fall.',
-        'Bonds trade every day. Investors react to a downgrade at once, so prices fall and yields rise right away.',
-        'The old bonds pay the same fixed coupons as before. Lenders now want a higher yield, so they pay less for those bonds.'] },
     { title: 'Exam-style question',
-      q: 'A 4-year bond has a $1,000 face value and pays a 6% coupon once a year. Lenders now demand 8%, and the annuity factor for 8% and 4 years is 3.3121. What is the bond’s price?',
-      options: ['About $933.76', 'About $975.03', 'About $1,198.73', 'About $1,000.00'],
+      q: 'A bond has a $1,000 face value, pays a 5% coupon once a year and matures in 6 years. Lenders now demand 7%. What is its price?',
+      options: ['About $904.66', 'About $966.34', 'About $1,238.32', 'About $1,000.00'],
       answer: 0,
-      why: ['Right. The coupons are worth $60 × 3.3121 = $198.73 today, and the face value is worth $1,000 ÷ 1.08⁴ = $735.03, so the price is $933.76. Questions on the exams look like this one.',
-        '$975.03 adds up the four $60 coupons without discounting them. Multiply $60 by the annuity factor, 3.3121, instead.',
-        '$1,198.73 adds the full $1,000 face value without discounting it. The $1,000 arrives in 4 years, so divide it by 1.08⁴.',
-        '$1,000 is the price only when the market rate equals the coupon rate. Here lenders demand 8%, more than the 6% coupon, so the price is below $1,000.'] },
+      why: ['Right. The annuity factor for 7% and 6 years is 4.7665, so the coupons are worth $50 × 4.7665 = $238.32 today. The face value is worth $1,000 ÷ 1.07⁶ = $666.34, so the price is $904.66. Exam questions look like this one.',
+        '$966.34 adds up the six $50 coupons without discounting them. Multiply $50 by the annuity factor for 7% and 6 years, 4.7665, instead.',
+        '$1,238.32 adds the full $1,000 face value without discounting it. The $1,000 arrives in 6 years, so divide it by 1.07⁶.',
+        '$1,000 is the price only when the market rate equals the coupon rate. Lenders demand 7%, more than the 5% coupon, so the price is below $1,000.'] },
   ];
 
   const STEPS = [
-    { id: 'walk', label: 'Worked example', kind: 'walk' },
-    { id: 'q1', label: 'Check 1', kind: 'check', quiz: 0 },
-    { id: 't1', label: 'Price a bond', kind: 'task' },
-    { id: 't2', label: 'Rates go up', kind: 'task' },
-    { id: 'q2', label: 'Check 2', kind: 'check', quiz: 1 },
-    { id: 't3', label: 'Short and long', kind: 'task' },
-    { id: 't4', label: 'Find the yield', kind: 'task' },
-    { id: 'q3', label: 'Check 3', kind: 'check', quiz: 2 },
-    { id: 't5', label: 'Treasury plus spread', kind: 'task' },
-    { id: 'q4', label: 'Exam-style question', kind: 'check', quiz: 3 },
+    { id: 'p1', label: 'Price a bond', kind: 'task' },
+    { id: 'p2', label: 'Your own bond', kind: 'task' },
+    { id: 'r1', label: 'Rates go up', kind: 'task' },
+    { id: 'q1', label: 'Quick check', kind: 'check', quiz: 0 },
+    { id: 'r2', label: 'Rates move again', kind: 'task' },
+    { id: 's1', label: 'What a loan costs', kind: 'task' },
+    { id: 's2', label: 'The lodge loan', kind: 'task' },
+    { id: 'q2', label: 'Exam-style question', kind: 'check', quiz: 1 },
     { id: 'note', label: 'Your note', kind: 'note' },
   ];
 
-  const r4 = (x) => Math.round(x * 1e4) / 1e4;
-  const AF = (yPct, n) => r4((1 - Math.pow(1 + yPct / 100, -n)) / (yPct / 100));
-  // A $1,000 bond paying cPct once a year for n years, priced at yPct. useAF: price the coupons with the 4-place annuity factor shown on the page.
-  const price = (cPct, yPct, n, useAF) => 10 * cPct * (useAF ? AF(yPct, n) : (1 - Math.pow(1 + yPct / 100, -n)) / (yPct / 100)) + 1000 / Math.pow(1 + yPct / 100, n);
-  const faceAt = (yPct, n) => 1000 / Math.pow(1 + yPct / 100, n);
+  // ---------- bond arithmetic (rates are whole or half percents, as numbers like 7) ----------
+  const r4 = (x) => Math.round(x * 1e4) / 1e4, c2 = (x) => Math.round(x * 100) / 100;
+  const AF = (y, n) => r4((1 - Math.pow(1 + y / 100, -n)) / (y / 100));
+  const faceAt = (y, n) => c2(1000 / Math.pow(1 + y / 100, n));
+  // A $1,000 bond paying c% once a year for n years, priced at y%: every line rounded the way the page shows it.
+  function bond(c, y, n) { const C = 10 * c, af = AF(y, n), pvc = c2(C * af), pvf = faceAt(y, n); return { c, y, n, C, af, pvc, pvf, P: c2(pvc + pvf) }; }
 
-  // The round seed sets (exposed as DESK.ROUND for the tests).
-  const ROUND = { c1: [3, 4, 5, 6, 7], off1: [-3, -2, -1, 1, 2], d2: [1, 2], k: [4, 5, 6], d3: [1, 2], c4: [2, 2.5, 3], X: [150, 200, 250, 300, 350, 400] };
+  // Bonds no seed may reproduce: the reading's 5-year 5% bond (at any rate), the exam-style 6-year 5% bond at 7%,
+  // the final's two bonds (4 years 6% at 8%, 3 years 5% at 4%) and every worked example below.
+  const BANNED = ['5|*|5', '5|7|6', '6|8|4', '5|4|3', '4|5|3', '3|5|6', '6|7|7', '4|3|8'];
+  const banned = (c, y, n) => BANNED.some((s) => { const [a, b, d] = s.split('|'); return +a === c && (b === '*' || +b === y) && +d === n; });
 
   function buildTasks(rng, h) {
     const T = [];
-    const R = h.pick(rng, ['A', 'A-', 'BBB', 'BB+', 'BB']);
-    // t1 and t2: price a bond, then raise the market rate. Whole percents; never the exam-style bond (4 years, 6% coupon, 8%).
-    let n1, c1, y1, d2, y2;
-    for (let tries = 0; tries < 200; tries++) {
-      n1 = h.between(rng, 4, 10, 1); c1 = h.pick(rng, ROUND.c1); y1 = c1 + h.pick(rng, ROUND.off1);
-      d2 = h.pick(rng, ROUND.d2); if (y1 + d2 === c1) d2 = d2 === 1 ? 2 : 1; y2 = y1 + d2;
-      const exam = n1 === 4 && c1 === 6 && (y1 === 8 || y2 === 8);
-      if (y1 >= 3 && y2 !== c1 && !exam) break; }
-    const C1 = 10 * c1;
-    const b1 = { n: n1, c: c1, y: y1, C: C1, af: AF(y1, n1), PVc: C1 * AF(y1, n1), PVf: faceAt(y1, n1) };
-    b1.P = b1.PVc + b1.PVf;
-    T.push(Object.assign({ id: 't1', R }, b1));
-    const af2 = AF(y2, n1), P2 = C1 * af2 + faceAt(y2, n1);
-    T.push(Object.assign({ id: 't2', R, y2, d2, af2, P2, answer: P2, decision: y2 > c1 ? 'discount' : 'premium' }, b1));
-    // t3: a short and a long bond from the same issuer, both at par, then rates rise (never the reading's 5% pair at 6%)
-    const k = h.pick(rng, ROUND.k); let nS = h.pick(rng, [2, 3, 5]), nL = h.pick(rng, [20, 25, 30]); let d3 = h.pick(rng, ROUND.d3);
-    if (k === 5 && d3 === 1 && nS === 5 && nL === 30) d3 = 2;
-    if (k === 4 && nS === 2) nS = 3;   // the 2-year 4% bond is the worked example in steps 3, 4 and 7
-    const y3 = k + d3;
-    const afS = AF(y3, nS), afL = AF(y3, nL); const pS = 10 * k * afS + faceAt(y3, nS), pL = 10 * k * afL + faceAt(y3, nL);
-    T.push({ id: 't3', R, k, nS, nL, d3, y3, afS, afL, pS, pL, decision: 'long' });
-    // t4: an older Northpass bond at its market price; its yield is the real Treasury yield for its length plus the rating's real spread
-    const n4 = h.pick(rng, [5, 7]), c4 = h.pick(rng, ROUND.c4); const y4 = Math.round((TSY[n4] + spr(R)) * 100) / 100;
-    const P4 = Math.round(price(c4, y4, n4, false) * 100) / 100;
-    T.push({ id: 't4', R, n4, c4, y4, P4, cy: 10 * c4 / P4 * 100, answer: y4, decision: 'ytm' });
-    // t5: estimate the cost of a new, longer loan from the Treasury yield and the spread
-    const M = h.pick(rng, [10, 20, 30]), X = h.pick(rng, ROUND.X); const cost = Math.round((TSY[M] + spr(R)) * 100) / 100;
-    T.push({ id: 't5', R, M, X, tsy: TSY[M], s: spr(R), cost, interest: X * 1e6 * cost / 100, n4, y4 });
+    // p1 (faded) and p2 (own): two older Northpass bonds, coupon and market rate whole percents, never equal.
+    const older = (avoid) => { let c, y, n; do { c = h.pick(rng, [3, 4, 5, 6, 7]); y = c + h.pick(rng, [-2, -1, 1, 2]); n = h.between(rng, 4, 10, 1); }
+      while (y < 3 || banned(c, y, n) || (avoid && avoid.c === c && avoid.y === y)); return bond(c, y, n); };
+    const b1 = older(null); T.push(Object.assign({ id: 'p1' }, b1, { answer: b1.P }));
+    const b2 = older(b1); T.push(Object.assign({ id: 'p2' }, b2, { answer: b2.P }));
+    // r1 (faded): a bond sold at $1,000 when lenders demanded its coupon rate; rates then rise 1 or 2 points.
+    { let k, n, d; do { k = h.pick(rng, [4, 5, 7]); n = h.between(rng, 5, 10, 1); d = h.pick(rng, [1, 2]); } while (banned(k, k + d, n));
+      const b = bond(k, k + d, n); T.push(Object.assign({ id: 'r1', k, d, old: 1000 }, b, { answer: b.P, decision: 'fell' })); }
+    // r2 (own): another bond sold at $1,000; rates fall (about 60%) or rise 1 or 2 points.
+    { let k, n, d, y; do { k = h.pick(rng, [4, 5, 6, 7, 8]); n = h.between(rng, 5, 10, 1); d = h.pick(rng, [1, 2]); y = rng() < 0.6 ? k - d : k + d; } while (y < 2 || banned(k, y, n));
+      const b = bond(k, y, n); T.push(Object.assign({ id: 'r2', k, d, old: 1000 }, b, { answer: b.P, decision: y < k ? 'rose' : 'fell' })); }
+    // s1 (faded) and s2 (own): Treasury yield + spread for Northpass's rating, then the yearly interest on the loan.
+    // Never the borrowing cost of a worked example (4.57%, 6.66%) or of the reading's Dick's loan (5.37%).
+    const R = h.pick(rng, ['AA', 'A', 'BBB', 'BB', 'B']);
+    const costOf = (n) => Math.round((TSY[n] + SPREAD[R]) * 100) / 1e4, KNOWN = [0.0537, 0.0457, 0.0666];
+    const loan = (id, ns, xs) => { const ok = ns.filter((n) => !KNOWN.includes(costOf(n))), n = h.pick(rng, ok.length ? ok : ns), X = h.pick(rng, xs);
+      const tsy = TSY[n] / 100, spr = SPREAD[R] / 100, cost = costOf(n);
+      return { id, R, n, X, tsy, spr, cost, interest: Math.round(X * 1e6 * cost), answer: cost }; };
+    T.push(loan('s1', [5, 7], [100, 150, 200, 250]));
+    T.push(loan('s2', [10, 20, 30], [250, 300, 350, 400]));
     return T;
   }
 
-  const m = (x, dp) => root.DeskEngine.h.money(x, dp);
-  const m2 = (x) => m(x, 2);
-  const mil = (x) => '$' + x + ' million';
-  const sg1 = (x) => (x < 0 ? '−' : '+') + Math.abs(x).toFixed(1) + '%';
-  const p2 = (x) => (Math.round(x * 100) / 100).toFixed(2) + '%';
-  const pc = (x) => (Math.round(x * 100) / 100) + '%';
-  const g1 = (yPct) => String(Math.round((1 + yPct / 100) * 1e4) / 1e4);   // 1 + rate, as typed in a calculator: 1.05, 1.025
-  const cell = (L, y, label) => `<label class="sr-only" for="r${y}">${label}</label><input id="r${y}" class="rowin" data-row="${y}" inputmode="decimal" autocomplete="off" value="${(L.rows || [])[y] ? String(L.rows[y]).replace(/"/g, '') : ''}"><span class="mark" id="mk${y}"></span>`;
-  const termTable = (rows, cap) => `<div class="tw"><table class="cf"><caption>${cap}</caption><tbody>${rows.map((x) => `<tr><td class="lbl">${x[0]}</td><td>${x[1]}</td></tr>`).join('')}</tbody></table></div>`;
-  const bar = (w, id) => `<div style="background:var(--panel);border-radius:3px;height:.9rem"><div ${id ? `id="${id}" ` : ''}style="background:var(--brand);height:100%;border-radius:3px;width:${Math.max(0, Math.min(100, w)).toFixed(1)}%"></div></div>`;
-  // Percent inputs: "4.9", "4.90%" both mean 4.9 percent.
-  const pctIn = (s, h) => { if (s == null) return NaN; const str = String(s).trim(); if (!str) return NaN; const v = h.parseMoney(str); return /%/.test(str) ? v * 100 : v; };
-  const judgePct = (h, s, exact, diag, opts) => {
-    const v = pctIn(s, h); opts = opts || {};
-    if (isFinite(v) && exact > 0.3 && Math.abs(v * 100 - exact) <= (opts.tol || 0.005) * 1.01) return { ok: false, code: 'decimal', msg: `Type the rate as a percent: ${exact.toFixed(2)} rather than ${(exact / 100).toFixed(4)}.` };
-    return h.judgeNumber(v, exact, diag, Object.assign({ tol: 0.005, scale: 50, unreadable: 'Type a rate as a percent, like 4.26.', closeMsg: 'Close. Check that you copied the rate from the right line of the table.' }, opts));
+  // ---------- display ----------
+  const money = (x, dp) => root.DeskEngine.h.money(x, dp);
+  const m = (x) => money(x, 2), m0 = (x) => money(x);
+  const p2 = (x) => String(+(x * 100).toFixed(2)) + '%';
+  const f4 = (x) => Number(x).toFixed(4);
+  const g = (y) => (1 + y / 100).toFixed(2);
+  const sup = (n) => `<sup>${n}</sup>`;
+  const plain = (s) => String(s).replace(/<sup>−?(\d+)<\/sup>/g, (a, d) => '^' + (a.includes('−') ? '-' : '') + d).replace(/<[^>]+>/g, '');
+  const SHOW = { money0: m0, money: m, factor: f4, pct: p2 };
+  // A percent typed as 5.37%, 5.37 or 0.0537 all mean 5.37%, and a spread typed as 0.55 means 0.55%. No rate on this desk
+  // is above 20%, so a bare number of 0.2 or more is read as a percentage and a smaller one as a decimal.
+  const pctIn = (h, s) => { const v = h.parseMoney(s); if (!isFinite(v)) return v; return (!/%/.test(String(s)) && Math.abs(v) >= 0.2) ? v / 100 : v; };
+
+  // Lines for each kind of task. `blanks` lists the line indexes the student fills; null means every line.
+  // The worked example uses the same function on other numbers, so the two tables always match.
+  const LINES = {
+    bond: (b, blanks, ex) => { const known = (i) => ex || (blanks && !blanks.includes(i));
+      return [
+        { label: 'Coupon each year', calc: `${b.c}% × $1,000`, x: b.C, kind: 'money0', typed: `${b.c / 100}*1000` },
+        { label: `Annuity factor, ${b.y}%, ${b.n} years`, calc: `(1 − ${g(b.y)}${sup('−' + b.n)}) ÷ ${b.y / 100}`, x: b.af, kind: 'factor', typed: `1-${g(b.y)}^-${b.n}</code>, then <code>ans/${b.y / 100}` },
+        { label: 'Value today of the coupons', calc: known(0) && known(1) ? `${m0(b.C)} × ${f4(b.af)}` : 'Coupon × annuity factor', x: b.pvc, kind: 'money', typed: `${b.C}*${f4(b.af)}`,
+          hint: 'Multiply the coupon by the annuity factor.' },
+        { label: 'Value today of the face value', calc: `$1,000 ÷ ${g(b.y)}${sup(b.n)}`, x: b.pvf, kind: 'money', typed: `1000/${g(b.y)}^${b.n}` },
+        { label: 'Price', calc: known(2) && known(3) ? `${m(b.pvc)} + ${m(b.pvf)}` : 'Coupons + face value, both today', x: b.P, kind: 'money', typed: `${b.pvc.toFixed(2)}+${b.pvf.toFixed(2)}`,
+          hint: 'Add the value today of the coupons and the value today of the face value.' },
+      ].map((l, i) => Object.assign(l, { input: !blanks || blanks.includes(i) })); },
+    loan: (t, blanks, ex) => { const known = (i) => ex || (blanks && !blanks.includes(i));
+      return [
+        { label: `Treasury yield, ${t.n} years`, calc: known(0) ? 'Given' : 'From the Treasury table', x: t.tsy, kind: 'pct', hint: `Read the ${t.n}-year yield from the Treasury table.` },
+        { label: `Default spread, ${t.R}`, calc: known(1) ? 'Given' : 'From the spread table', x: t.spr, kind: 'pct', hint: `Read the spread for ${t.R} from the spread table.` },
+        { label: 'Borrowing cost', calc: known(0) && known(1) ? `${p2(t.tsy)} + ${p2(t.spr)}` : 'Treasury yield + default spread', x: t.cost, kind: 'pct', hint: 'Add the Treasury yield and the default spread.' },
+        { label: 'Yearly interest', calc: `$${t.X} million × ${known(2) ? p2(t.cost) : 'the borrowing cost'}`, x: t.interest, kind: 'money0', typed: `${t.X * 1e6}*${t.cost.toFixed(4)}`,
+          hint: `Multiply $${t.X} million by the borrowing cost as a decimal.` },
+      ].map((l, i) => Object.assign(l, { input: !blanks || blanks.includes(i) })); },
+  };
+  const FADE = { p1: [3, 4], r1: [2, 4], s1: [2, 3] };
+  function linesFor(t) {
+    if (t.id[0] === 's') return LINES.loan(t, FADE[t.id] || null);
+    return LINES.bond(t, FADE[t.id] || null);
+  }
+  // For the engine's ladder: a filled or given line shows its text; an input line keeps its input format.
+  const toLadder = (lines, filled) => lines.map((l) => (filled || !l.input ? { label: l.label, calc: l.calc, value: SHOW[l.kind](l.x), fmt: 'text', input: l.input }
+    : { label: l.label, calc: l.calc, value: l.x, fmt: l.kind === 'money0' ? 'money' : l.kind, input: true }));
+
+  const exBond = (c, y, n) => bond(c, y, n);
+  const exLoan = (R, n, X) => { const tsy = TSY[n] / 100, spr = SPREAD[R] / 100, cost = Math.round((tsy + spr) * 1e4) / 1e4; return { R, n, X, tsy, spr, cost, interest: Math.round(X * 1e6 * cost) }; };
+  const EXAMPLES = () => ({
+    p1: { cap: 'A ski shop chain’s bond: $1,000 face value, 4% coupon rate, 3 years left, and lenders demand 5%', lines: LINES.bond(exBond(4, 5, 3), FADE.p1, true) },
+    p2: { cap: 'A hotel company’s bond: $1,000 face value, 3% coupon rate, 6 years left, and lenders demand 5%', lines: LINES.bond(exBond(3, 5, 6), null, true) },
+    r1: { cap: 'A marina company sold a 6% bond for $1,000 when lenders demanded 6%. It has 7 years left, and lenders now demand 7%.', lines: LINES.bond(exBond(6, 7, 7), FADE.r1, true),
+      after: 'The price fell from $1,000 to $946.11.' },
+    r2: { cap: 'A golf club company sold a 4% bond for $1,000 when lenders demanded 4%. It has 8 years left, and lenders now demand 3%.', lines: LINES.bond(exBond(4, 3, 8), null, true),
+      after: `The price rose from $1,000 to ${m(exBond(4, 3, 8).P)}.` },
+    s1: { cap: 'A ski-lift maker rated A borrows $100 million for 5 years', lines: LINES.loan(exLoan('A', 5, 100), FADE.s1, true) },
+    s2: { cap: 'A hotel company rated BB borrows $300 million for 20 years', lines: LINES.loan(exLoan('BB', 20, 300), null, true) },
+  });
+
+  // The two lookup tables run down the page, side by side, so they fit a phone screen.
+  const vt = (cap, head, rows) => `<div class="tw" style="flex:0 1 13rem"><table class="cf" style="width:auto;min-width:11rem"><caption>${cap}</caption><thead><tr><th scope="col">${head[0]}</th><th scope="col">${head[1]}</th></tr></thead><tbody>${rows.map(([k, v]) => `<tr><td class="lbl">${k}</td><td>${v.toFixed(2)}%</td></tr>`).join('')}</tbody></table></div>`;
+  const tables = () => `<div style="display:flex;flex-wrap:wrap;gap:0 2rem">${vt('Treasury yields, January 30, 2026', ['Years', 'Yield'], Object.entries(TSY))}${vt('Default spreads, January 2026', ['S&amp;P rating', 'Spread'], Object.entries(SPREAD))}</div>`;
+
+  const PROBLEM = {
+    p1: (t) => ({ title: 'Price a bond', place: 'Delphine starts with one of Northpass’s older bonds.',
+      body: `<p>The bond has a <b>$1,000</b> face value and a <b>${t.c}%</b> coupon rate, with <b>${t.n} years</b> left. Lenders now demand <b>${t.y}%</b>. What is it worth today? The first three lines are done for you.</p>` }),
+    p2: (t) => ({ title: 'Price your own bond', place: 'Northpass has a second older bond.',
+      body: `<p>This bond has a <b>$1,000</b> face value and a <b>${t.c}%</b> coupon rate, with <b>${t.n} years</b> left. Lenders now demand <b>${t.y}%</b>. What is it worth today?</p>` }),
+    r1: (t) => ({ title: 'Rates go up', place: 'Northpass sold a newer bond at its full face value.',
+      body: `<p>Northpass sold a bond with a <b>${t.k}%</b> coupon rate for <b>$1,000</b>, when lenders demanded ${t.k}%. It has <b>${t.n} years</b> left, and lenders now demand <b>${t.y}%</b>. What is it worth now? Three lines are done for you.</p>`,
+      choice: { legend: 'Compared with the $1,000 it sold for, the price has', options: [['fell', 'Fallen'], ['rose', 'Risen']] } }),
+    r2: (t) => ({ title: 'Rates move again', place: 'Rates have moved on Northpass’s newest bond too.',
+      body: `<p>Northpass sold a bond with a <b>${t.k}%</b> coupon rate for <b>$1,000</b>, when lenders demanded ${t.k}%. It has <b>${t.n} years</b> left, and lenders now demand <b>${t.y}%</b>. What is it worth now?</p>`,
+      choice: { legend: 'Compared with the $1,000 it sold for, the price has', options: [['fell', 'Fallen'], ['rose', 'Risen']] } }),
+    s1: (t) => ({ title: 'What a loan costs', place: 'Northpass needs new snowmaking machines.',
+      body: `<p>Northpass is rated <b>${t.R}</b> and wants to borrow <b>$${t.X} million</b> for <b>${t.n} years</b>. What will lenders charge, and what is the interest each year? The Treasury yield and the spread are done for you.</p>` }),
+    s2: (t) => ({ title: 'The lodge loan', place: 'The new lodge needs a longer loan.',
+      body: `<p>Northpass, rated <b>${t.R}</b>, wants to borrow <b>$${t.X} million</b> for <b>${t.n} years</b>. Use the two tables to find what lenders will charge and the interest each year.</p>${tables()}` }),
   };
 
   function taskView(t, L, h) {
-    if (t.id === 't1') return { title: 'Price a bond', place: 'Northpass is planning to sell a new bond to pay for a chairlift.',
-      body: `<p>Delphine wants to know what investors would pay for each $1,000 bond if they demand <b>${pc(t.y)}</b> a year. Northpass pays the coupon once a year.</p>
-        ${termTable([['Face value, repaid at maturity', '$1,000'], ['Coupon rate', pc(t.c)], ['Years to maturity', t.n], ['Market rate lenders demand', pc(t.y)], [`Annuity factor (${pc(t.y)}, ${t.n} years)`, t.af.toFixed(4)]], 'The bond')}`,
-      example: `<p>A 2-year bond with a 4% coupon, when lenders demand 5%. Yearly coupon: 4% × $1,000 = $40.</p>
-        <p>Value today of the coupons: $40 × 1.8594 (annuity factor, 5%, 2 years) = $74.38.</p>
-        <p>Value today of the face value: $1,000 ÷ 1.05² = $907.03.</p>
-        <p>Price: $74.38 + $907.03 = $981.41.</p>`,
-      table: `<p>Now Northpass’s bond. Fill in the four lines.</p><div class="tw"><table class="cf"><caption>The bond’s price</caption><thead><tr><th scope="col" style="text-align:left">Line</th><th scope="col">Amount</th></tr></thead><tbody>
-        <tr><td class="lbl">Yearly coupon (coupon rate × $1,000)</td><td>${cell(L, 1, 'Yearly coupon')}</td></tr>
-        <tr><td class="lbl">Value today of the coupons (yearly coupon × annuity factor)</td><td>${cell(L, 2, 'Value today of the coupons')}</td></tr>
-        <tr><td class="lbl">Value today of the face value ($1,000 ÷ (1 + market rate)<sup>years</sup>)</td><td>${cell(L, 3, 'Value today of the face value')}</td></tr>
-        <tr class="total hl"><td class="lbl"><b>Price</b> (value of the coupons + value of the face value)</td><td>${cell(L, 4, 'Price')}</td></tr></tbody></table></div>
-        <p class="small">Give dollars and cents, like 981.41.</p>`,
-      helpLabels: ['Show me the coupons', 'Show me every line'] };
-    if (t.id === 't2') return { title: 'Rates go up', place: 'Before Northpass sells the bond, interest rates jump.',
-      body: `<p>Lenders now demand <b>${pc(t.y2)}</b> instead of ${pc(t.y)}, up ${t.d2} percentage point${t.d2 === 1 ? '' : 's'}. The bond is the same: a <b>${pc(t.c)}</b> coupon (${m(t.C)} a year), <b>${t.n} years</b> to maturity and a <b>$1,000</b> face value. The annuity factor at the new rate is <b>${t.af2.toFixed(4)}</b>.</p>`,
-      example: `<p>The 2-year, 4% bond again, now at 6%. Value today of the coupons: $40 × 1.8334 = $73.34.</p>
-        <p>Value today of the face value: $1,000 ÷ 1.06² = $890.00.</p>
-        <p>Price: $73.34 + $890.00 = $963.34. That is below $1,000, so it sells at a discount.</p>`,
-      parts: [{ html: '', field: 'value' }, { html: '', field: 'choice' }],
-      value: { label: `1. What is the bond’s new price at ${pc(t.y2)}?`, placeholder: '$0.00', help: 'Give dollars and cents, like 963.34.' },
-      choice: { legend: '2. At the new rate, the bond sells', options: [['discount', 'Below $1,000, at a discount'], ['par', 'At $1,000, at par'], ['premium', 'Above $1,000, at a premium']] } };
-    if (t.id === 't3') {
-      const cap = (lab, i, n, af) => `<tr><td class="lbl" style="border-bottom:0"><b>${n}-year bond</b><span class="ex">annuity factor at ${pc(t.y3)}: ${af.toFixed(4)}</span></td><td style="border-bottom:0">$1,000.00</td><td style="border-bottom:0">${cell(L, i, `New price of the ${n}-year bond`)}</td></tr>
-        <tr><td colspan="3" aria-hidden="true" style="padding-top:0">${bar(0, 'bar' + i)}<span class="small" id="lab${i}"></span></td></tr>`;
-      return { title: 'A short bond and a long bond', place: 'Northpass has two bonds outstanding, one short and one long.',
-        body: `<p>Both bonds pay a <b>${pc(t.k)}</b> coupon (${m(10 * t.k)} a year on $1,000), and both sell for $1,000 today because lenders demand ${pc(t.k)}. One matures in <b>${t.nS} years</b>, the other in <b>${t.nL} years</b>. Then rates rise to <b>${pc(t.y3)}</b>.</p>`,
-        example: `<p>A 10-year bond with a 3% coupon sells for $1,000. Rates rise to 4%.</p>
-          <p>New price: $30 × 8.1109 + $1,000 ÷ 1.04¹⁰ = $918.89.</p>
-          <p>Share of its value lost: ($1,000 − $918.89) ÷ $1,000 = 8.1%.</p>`,
-        parts: [{ html: `<p><b>1. Find each bond’s new price at ${pc(t.y3)}.</b> New price = yearly coupon × annuity factor + $1,000 ÷ ${g1(t.y3)}<sup>years</sup>.</p>`, field: 'table' }, { html: '', field: 'choice' }],
-        table: `<div class="tw"><table class="cf"><caption>Two Northpass bonds, before and after rates rise to ${pc(t.y3)}</caption><thead><tr><th scope="col" style="text-align:left">Bond</th><th scope="col">Price at ${pc(t.k)}</th><th scope="col">Price at ${pc(t.y3)}</th></tr></thead><tbody>${cap('S', 1, t.nS, t.afS)}${cap('L', 2, t.nL, t.afL)}</tbody></table></div><p class="small">Each bar shows the new price as a share of $1,000. Give dollars and cents.</p>`,
-        onRows: (rs, $) => { [1, 2].forEach((i) => { const v = h.parseMoney(rs[i]); const el = $('#bar' + i), lab = $('#lab' + i); const ok = isFinite(v) && v > 0 && v < 2000;
-          if (el) el.style.width = (ok ? Math.min(100, v / 10) : 0).toFixed(1) + '%'; if (lab) lab.textContent = ok ? `${(v / 10).toFixed(1)}% of face value, a change of ${sg1(v / 10 - 100)}` : ''; }); },
-        choice: { legend: '2. Which bond lost the larger share of its value?', options: [['short', `The ${t.nS}-year bond`], ['long', `The ${t.nL}-year bond`], ['same', 'Both lost the same share']] },
-        helpLabels: ['Show me the short bond', 'Show me both bonds'] };
+    const P = PROBLEM[t.id](t), E = EXAMPLES()[t.id];
+    const example = h.ladder(toLadder(E.lines, true), { filled: true, caption: E.cap }) + (E.after ? `<p>${E.after}</p>` : '');
+    const lines = linesFor(t);
+    const table = h.ladder(toLadder(lines, false), { rows: L.rows, caption: 'Your turn' })
+      + (t.id[0] === 's' ? '<p class="small">Type a percentage like 4.5%, and dollars like 12,500,000 or 12.5m.</p>' : '<p class="small">Type dollars and cents, like 981.41.</p>');
+    const parts = [{ html: '', field: 'table' }];
+    if (P.choice) parts.push({ html: '', field: 'choice' });
+    return { title: P.title, place: P.place, body: P.body, example, table, parts, choice: P.choice,
+      sources: t.id[0] === 's' ? SOURCES : '', helpLabels: ['Show me the first blank', 'Show me every line'] };
+  }
+
+  // Common slips, per line, phrased with the student's own numbers.
+  function diagFor(t, l) {
+    const D = [];
+    if (t.id[0] !== 's') {
+      const { c, y, n, C, af } = t;
+      if (l.label === 'Coupon each year') D.push([10 * y, 'mkt', `That uses the market rate, ${y}%. The coupon uses the coupon rate: ${c}% × $1,000.`],
+        [c, 'rate', `That is the coupon rate itself. Turn it into dollars: ${c}% × $1,000.`]);
+      if (/^Annuity factor/.test(l.label)) { const top = 1 - Math.pow(1 + y / 100, -n);
+        D.push([top, 'top', `That is 1 − ${g(y)}^−${n}. Divide it by ${y / 100} to get the factor.`], [top * y / 100, 'times', `That multiplies by ${y / 100}. Divide by it instead.`],
+          [AF(c, n), 'coupon', `That uses the coupon rate, ${c}%. Discount at the market rate, ${y}%.`]); }
+      if (l.label === 'Value today of the coupons') D.push([C * n, 'nodisc', `That adds up ${n} coupons with no discounting. Multiply ${m0(C)} by the annuity factor, ${f4(af)}.`],
+        [C / af, 'div', `That divides. Multiply instead: ${m0(C)} × ${f4(af)}.`], [C * AF(c, n), 'coupon', `That uses the annuity factor at the coupon rate, ${c}%. Use the market rate, ${y}%.`]);
+      if (l.label === 'Value today of the face value') D.push([1000, 'nodisc', `That is the face value itself. It arrives in ${n} years, so divide: $1,000 ÷ ${g(y)}^${n}.`],
+        [1000 * Math.pow(1 + y / 100, n), 'fwd', `That grows $1,000 forward. Divide by ${g(y)}^${n} instead of multiplying.`],
+        [faceAt(c, n), 'coupon', `That discounts at the coupon rate, ${c}%. Use the market rate, ${y}%.`], [faceAt(y, n - 1), 'n1', `That uses ${n - 1} years. The $1,000 arrives in ${n} years.`]);
+      if (l.label === 'Price') { D.push([t.pvc + 1000, 'facefull', `That adds the full $1,000. Add the face value’s value today instead, $1,000 ÷ ${g(y)}^${n}.`],
+        [C * n + 1000, 'nodisc', 'That adds every payment with no discounting. Add the two values today instead.'], [t.pvc, 'coupononly', 'That is the coupons alone. Add the value today of the face value.'],
+        [t.pvf, 'faceonly', 'That is the face value alone. Add the value today of the coupons.']);
+        if (t.old) D.push([t.old, 'old', `$1,000 was the price when lenders demanded ${t.k}%. Price the bond at ${y}% now.`]); }
+    } else {
+      const otherT = Object.keys(TSY).filter((k) => +k !== t.n), otherR = Object.keys(SPREAD).filter((r) => r !== t.R);
+      if (/^Treasury/.test(l.label)) otherT.forEach((k) => D.push([TSY[k] / 100, 'tsyn', `That is the ${k}-year Treasury yield. The loan runs ${t.n} years.`]));
+      if (/^Default spread/.test(l.label)) otherR.forEach((r) => D.push([SPREAD[r] / 100, 'sprr', `That is the spread for ${r}. Northpass is rated ${t.R}.`]));
+      if (l.label === 'Borrowing cost') D.push([t.tsy, 'tsy', 'That is the Treasury yield alone. Add the default spread.'], [t.spr, 'spr', 'That is the spread alone. Add it to the Treasury yield.'],
+        [t.tsy - t.spr, 'minus', `Add the spread, don’t subtract it: ${p2(t.tsy)} + ${p2(t.spr)}.`]);
+      if (l.label === 'Yearly interest') D.push([t.X * 1e6 * t.spr, 'spr', `That charges only the spread. Multiply $${t.X} million by the whole borrowing cost.`],
+        [t.X * 1e6 * t.tsy, 'tsy', `That charges only the Treasury yield. Multiply $${t.X} million by the whole borrowing cost.`],
+        [t.X * 1e6 * t.cost * 100, 'pct', `Turn the borrowing cost into a decimal before you multiply: ${p2(t.cost)} = ${t.cost.toFixed(4)}.`],
+        [t.X * t.cost, 'millions', 'Type the whole amount in dollars, like 12,500,000, or add m for millions, like 12.5m.']);
     }
-    if (t.id === 't4') {
-      const start = L.try != null ? L.try : t.c4;
-      return { title: 'Find the yield', place: 'Northpass sold a bond a few years ago, when rates were low. It now trades below face value.',
-        body: `<p>Delphine has a quote on the bond. Northpass is rated <b>${rl(t.R)}</b>.</p>
-          ${termTable([['Face value', '$1,000'], ['Coupon rate', `${pc(t.c4)} (${m2(10 * t.c4)} a year)`], ['Years to maturity', t.n4], ['Price today', m2(t.P4)]], 'The older bond')}
-          <p>The <b>yield to maturity</b> is the rate at which the value today of the coupons and the face value equals the price.</p>`,
-        example: `<p>A 2-year bond with a 4% coupon sells for $981.41.</p>
-          <p>Try 4%: the bond is worth $1,000.00, more than the price, so try a higher rate.</p>
-          <p>Try 5%: $40 × 1.8594 + $1,000 ÷ 1.05² = $981.41, a match. The yield to maturity is 5%.</p>`,
-        parts: [{ html: `<p>Move the slider to try rates, and watch the bond’s value change.</p>
-          <div class="slider-wrap"><label for="trySlider">Try a rate</label><input type="range" id="trySlider" min="1" max="10" step="0.05" value="${start}"><p class="readout" id="tryOut" aria-live="polite"></p></div>
-          <p class="small">In a spreadsheet, <code>=RATE(years, yearly coupon, -price, 1000)</code> gives the same answer.</p>`, field: 'value' }, { html: '', field: 'choice' }],
-        wire: ($, L2) => { const s = $('#trySlider'), out = $('#tryOut'); if (!s || !out) return;
-          const upd = () => { const r = Number(s.value); L2.try = r; const v = price(t.c4, r, t.n4, false); const diff = v - t.P4;
-            out.textContent = `At ${r.toFixed(2)}%, the bond is worth ${m2(v)}. ` + (Math.abs(diff) <= 0.0025 * t.P4 ? 'That is about the price, so this rate is about the yield.' : diff > 0 ? `That is more than the ${m2(t.P4)} price, so try a higher rate.` : `That is less than the ${m2(t.P4)} price, so try a lower rate.`); };
-          s.addEventListener('input', upd); upd(); },
-        value: { label: '1. What is the bond’s yield to maturity, in percent?', placeholder: '0.00', help: 'Type a percent, like 4.25.' },
-        choice: { legend: `2. If Northpass borrowed again for ${t.n4} years today, about what rate would lenders demand?`, options: [['coupon', `${pc(t.c4)}, the coupon on this bond`], ['ytm', 'The yield to maturity you found'], ['tsy', `${pc(TSY[t.n4])}, the ${t.n4}-year Treasury yield`]] },
-        sources: `<p>${SRC_TSY}</p>`,
-        helpLabels: ['Show me where to start', 'Show me the yield'] };
-    }
-    if (t.id === 't5') {
-      const tsyRows = Object.keys(TSY).map((y) => [`${y} years`, p2(TSY[y])]);
-      return { title: 'Treasury plus spread', place: `Northpass wants to borrow ${mil(t.X)} for ${t.M} years to build a new lodge.`,
-        body: `<p>Northpass has no bond that matures in ${t.M} years, so Delphine estimates the rate in two parts: the Treasury yield for the same length, plus the default spread for Northpass’s <b>${rl(t.R)}</b> rating.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:0 2rem;align-items:flex-start"><div style="flex:1 1 15rem">${termTable(tsyRows, 'Treasury yields, January 30, 2026')}</div><div style="flex:1 1 15rem">${termTable(SPREAD.map((x) => [rl(x[0]), p2(x[1])]), 'Default spread by rating, January 2026')}</div></div>`,
-        example: `<p>Suppose the Treasury yield for the loan’s length is 4.00% and the spread for the company’s rating is 1.50%.</p>
-          <p>Borrowing cost: 4.00% + 1.50% = 5.50%.</p>
-          <p>Yearly interest on $100 million: $100 million × 0.0550 = $5,500,000.</p>`,
-        table: `<p>Now Northpass’s ${t.M}-year loan. Fill in the four lines.</p><div class="tw"><table class="cf"><caption>What a ${t.M}-year loan costs Northpass</caption><thead><tr><th scope="col" style="text-align:left">Line</th><th scope="col">Amount</th></tr></thead><tbody>
-          <tr><td class="lbl">Treasury yield for ${t.M} years (%)</td><td>${cell(L, 1, `Treasury yield for ${t.M} years, in percent`)}</td></tr>
-          <tr><td class="lbl">Default spread for ${rl(t.R)} (%)</td><td>${cell(L, 2, `Default spread for ${rl(t.R)}, in percent`)}</td></tr>
-          <tr class="hl"><td class="lbl"><b>Estimated borrowing cost</b>, % (Treasury yield + default spread)</td><td>${cell(L, 3, 'Estimated borrowing cost, in percent')}</td></tr>
-          <tr class="total"><td class="lbl">Yearly interest in dollars (${mil(t.X)} × estimated borrowing cost)</td><td>${cell(L, 4, 'Yearly interest in dollars')}</td></tr></tbody></table></div>
-          <p class="small">Type rates like 4.26 and dollars like 5,500,000 or 5.5m.</p>`,
-        sources: `<p>${SRC_TSY}</p><p>${SRC_SPR}</p>`,
-        helpLabels: ['Show me where to look', 'Show me every line'] };
-    }
+    return D;
   }
 
   function judgeTask(t, e, h) {
-    const rows = e.rows || [];
-    if (t.id === 't1') {
-      const rr = []; const nm = (x) => h.parseMoney(x);
-      rr[1] = h.judgeNumber(nm(rows[1]), t.C, [[t.c, 'pct', `The coupon is a dollar amount: ${pc(t.c)} × $1,000.`], [t.y * 10, 'market', `That uses the market rate. The coupon uses the coupon rate: ${pc(t.c)} × $1,000.`]], { tol: 0.01, otherMsg: `${pc(t.c)} × $1,000.` });
-      rr[2] = h.judgeNumber(nm(rows[2]), t.PVc, [[t.C * t.n, 'nodisc', `That adds up ${t.n} coupons, ${m(t.C)} × ${t.n}, without discounting them. Multiply the yearly coupon by the annuity factor, ${t.af.toFixed(4)}.`]],
-        { tol: 1, otherMsg: `Yearly coupon × annuity factor: ${m(t.C)} × ${t.af.toFixed(4)}.` });
-      rr[3] = h.judgeNumber(nm(rows[3]), t.PVf, [[1000, 'nodisc', `The $1,000 arrives in ${t.n} years, so discount it: $1,000 ÷ ${g1(t.y)}^${t.n}.`],
-        [faceAt(t.c, t.n), 'couprate', `Discount at the market rate, ${pc(t.y)}, not the ${pc(t.c)} coupon rate: $1,000 ÷ ${g1(t.y)}^${t.n}.`], [1000 * Math.pow(1 + t.y / 100, t.n), 'grow', `That grows the $1,000. Divide by ${g1(t.y)}^${t.n} instead of multiplying.`]],
-        { tol: 1, otherMsg: `$1,000 ÷ (1 + market rate)^years. In Desmos: 1000/${g1(t.y)}^${t.n}.` });
-      const own = isFinite(nm(rows[2])) && isFinite(nm(rows[3])) ? ` Your two values: ${m2(nm(rows[2]))} + ${m2(nm(rows[3]))} = ${m2(nm(rows[2]) + nm(rows[3]))}.` : '';
-      rr[4] = h.judgeNumber(nm(rows[4]), t.P, [[1000, 'par', `$1,000 is the price only when the market rate equals the coupon rate. Price = value of the coupons + value of the face value.${own}`],
-        [t.PVc + 1000, 'facenodisc', `Add the value today of the face value, ${m2(t.PVf)}, not the full $1,000.`], [t.C * t.n + t.PVf, 'coupnodisc', 'Add the value today of the coupons, not the plain total of the coupons.'], [t.PVf, 'nocoup', 'Add the value today of the coupons too.'], [t.PVc, 'noface', 'Add the value today of the face value too.']],
-        { tol: 1, otherMsg: `Price = value of the coupons + value of the face value.${own}` });
-      const bad = [1, 2, 3, 4].find((y) => !rr[y].ok);
-      if (bad) return { ok: false, rowRes: rr, msg: `${['', 'Yearly coupon', 'Value today of the coupons', 'Value today of the face value', 'Price'][bad]}: ${rr[bad].msg}` };
-      return { ok: true, rowRes: rr };
+    const lines = linesFor(t), rows = e.rows || [], rowRes = [], vals = [];
+    lines.forEach((l, i) => {
+      if (!l.input) return;
+      const opts = l.kind === 'pct' ? { tol: 0.0006, scale: Math.abs(l.x), unreadable: 'Type a percentage, like 4.5%.', closeMsg: 'Close. Keep two decimal places in the percentage.', otherMsg: l.hint || `${plain(l.calc)}.` }
+        : l.kind === 'factor' ? { tol: 0.0015, scale: 1, unreadable: 'Type the factor as a number, like 4.2124.', closeMsg: 'Close. Keep four decimal places.', otherMsg: l.hint || `${plain(l.calc)}.` }
+          : { tol: l.kind === 'money0' && t.id[0] === 's' ? Math.max(1000, 0.002 * l.x) : Math.max(0.1, 0.0005 * Math.abs(l.x)), scale: Math.abs(l.x), unreadable: 'Type a dollar amount, like 981.41.', closeMsg: 'Close. Keep four decimal places in the annuity factor and round only at the end.', otherMsg: l.hint || `${plain(l.calc)}.` };
+      const v = l.kind === 'pct' ? pctIn(h, rows[i]) : h.parseMoney(rows[i]); vals[i] = v;
+      rowRes[i] = h.judgeNumber(v, l.x, diagFor(t, l), opts);
+    });
+    // A price that adds the student's own two values correctly is not the slip; the slip is in a line above it.
+    if (t.id[0] !== 's' && rowRes[4] && !rowRes[4].ok) { const a = lines[2].input ? vals[2] : t.pvc, b = lines[3].input ? vals[3] : t.pvf;
+      if (isFinite(a) && isFinite(b) && Math.abs(vals[4] - (a + b)) < 0.06 && ((rowRes[2] && !rowRes[2].ok) || (rowRes[3] && !rowRes[3].ok)))
+        rowRes[4] = { ok: false, code: 'carried', msg: `${m(a)} + ${m(b)} adds up correctly, so fix the line marked ✗ above it and the price will follow.` }; }
+    const bad = rowRes.findIndex((x) => x && !x.ok);
+    if (bad >= 0) return { ok: false, rowRes, msg: `${lines[bad].label}: ${rowRes[bad].msg}` };
+    if (t.decision && e.choice !== t.decision) {
+      if (!e.choice) return { ok: false, rowRes, msg: 'Now answer the question under the table.' };
+      return { ok: false, rowRes, msg: `Compare your price, ${m(t.P)}, with the $1,000 the bond sold for. Which is bigger?` };
     }
-    if (t.id === 't2') {
-      const v = h.parseMoney(e.value);
-      const n = h.judgeNumber(v, t.P2, [[1000, 'par', 'The price is $1,000 only when the market rate equals the coupon rate.'], [t.P, 'old', `${m2(t.P)} is the price at the old rate, ${pc(t.y)}. Use the new rate, ${pc(t.y2)}, and the new annuity factor, ${t.af2.toFixed(4)}.`],
-        [t.C * t.af2 + 1000, 'facenodisc', `Discount the $1,000 too: $1,000 ÷ ${g1(t.y2)}^${t.n}.`], [t.C * t.af2 + t.PVf, 'oldface', `Discount the face value at the new rate as well: $1,000 ÷ ${g1(t.y2)}^${t.n}, not ÷ ${g1(t.y)}^${t.n}.`],
-        [t.PVc + faceAt(t.y2, t.n), 'oldaf', `Use the annuity factor at the new rate, ${t.af2.toFixed(4)}, for the coupons, not ${t.af.toFixed(4)}.`], [t.C * t.n + faceAt(t.y2, t.n), 'coupnodisc', `That adds up the ${t.n} coupons without discounting them. Multiply ${m(t.C)} by ${t.af2.toFixed(4)}.`], [t.P2 - t.P, 'change', 'That is how much the price changed. Give the new price itself.']],
-        { tol: 1, otherMsg: `${m(t.C)} × ${t.af2.toFixed(4)} + $1,000 ÷ ${g1(t.y2)}^${t.n}.` });
-      if (!n.ok) return n;
-      if (e.choice !== t.decision) return { ok: false, code: 'decision', msg: !e.choice ? 'Answer question 2 as well: compare the new price with the face value.' : `Your price, ${m2(v)}, is ${v < 1000 ? 'below' : 'above'} $1,000. A price below $1,000 is a discount, and a price above it is a premium.` };
-      return { ok: true };
-    }
-    if (t.id === 't3') {
-      const rr = []; const nm = (x) => h.parseMoney(x);
-      const one = (v, exact, other, n, af) => h.judgeNumber(v, exact, [[other, 'swap', 'That is the other bond’s price. Check which line is which.'], [10 * t.k * af + 1000, 'facenodisc', `Discount the $1,000 too: $1,000 ÷ ${g1(t.y3)}^${n}.`],
-        [1000, 'par', `That is the price before rates rose. Price the bond at ${pc(t.y3)}.`], [10 * t.k * n + faceAt(t.y3, n), 'coupnodisc', `Multiply the ${m(10 * t.k)} coupon by the annuity factor, ${af.toFixed(4)}, instead of by ${n}.`],
-        [10 * t.k * af + faceAt(t.k, n), 'oldface', `Discount the face value at the new rate too: $1,000 ÷ ${g1(t.y3)}^${n}, not ÷ ${g1(t.k)}^${n}.`]],
-        { tol: 1, otherMsg: `${m(10 * t.k)} × ${af.toFixed(4)} + $1,000 ÷ ${g1(t.y3)}^${n}.` });
-      rr[1] = one(nm(rows[1]), t.pS, t.pL, t.nS, t.afS); rr[2] = one(nm(rows[2]), t.pL, t.pS, t.nL, t.afL);
-      const bad = [1, 2].find((y) => !rr[y].ok);
-      if (bad) return { ok: false, rowRes: rr, msg: `${bad === 1 ? `The ${t.nS}-year bond` : `The ${t.nL}-year bond`}: ${rr[bad].msg}` };
-      if (e.choice !== t.decision) return { ok: false, rowRes: rr, msg: !e.choice ? 'Answer question 2 as well: which bond lost the larger share of its value?' : `Your ${t.nS}-year bond fell from $1,000 to ${m2(nm(rows[1]))}, and your ${t.nL}-year bond to ${m2(nm(rows[2]))}. Which one fell further below $1,000?` };
-      return { ok: true, rowRes: rr };
-    }
-    if (t.id === 't4') {
-      const n = judgePct(h, e.value, t.y4, [[t.c4, 'coupon', `${pc(t.c4)} is the coupon rate, fixed when the bond was sold. Find the rate at which the bond is worth its ${m2(t.P4)} price.`],
-        [t.cy, 'cy', `That divides the ${m2(10 * t.c4)} coupon by the ${m2(t.P4)} price. It leaves out the full $1,000 Northpass repays at maturity. Use the slider to find the rate at which the bond is worth ${m2(t.P4)}.`],
-        [TSY[t.n4], 'tsy', `${p2(TSY[t.n4])} is the ${t.n4}-year Treasury yield. Lenders demand more from Northpass than from the government. Use the slider to find the rate at which the bond is worth ${m2(t.P4)}.`]],
-        { tol: 0.05, closeMsg: 'Close. Move the slider in small steps until the bond’s value matches the price.', otherMsg: `Move the slider until the bond’s value matches ${m2(t.P4)}. A price below $1,000 means the yield is above the ${pc(t.c4)} coupon.` });
-      if (!n.ok) return n;
-      const mine = p2(pctIn(e.value, h));
-      if (e.choice !== t.decision) return { ok: false, code: 'decision', msg: !e.choice ? 'Answer question 2 as well: the rate on a new loan.' : (e.choice === 'coupon' ? `The ${pc(t.c4)} coupon was set years ago, when rates were lower. Your yield, ${mine}, shows what lenders demand from Northpass now.` : `The ${p2(TSY[t.n4])} Treasury yield leaves out the extra lenders demand because Northpass might not repay. Your yield on Northpass’s own bond, ${mine}, includes it.`) };
-      return { ok: true };
-    }
-    if (t.id === 't5') {
-      const rr = [];
-      const tenorDiag = Object.keys(TSY).filter((y) => Number(y) !== t.M).map((y) => [TSY[y], 'tenor', `${p2(TSY[y])} is the ${y}-year Treasury yield. Northpass wants to borrow for ${t.M} years.`]);
-      rr[1] = judgePct(h, rows[1], t.tsy, tenorDiag, { otherMsg: `Find the ${t.M}-year line in the Treasury table.`, closeMsg: `Close. Copy the ${t.M}-year line of the Treasury table exactly.` });
-      const ratDiag = SPREAD.filter((x) => x[0] !== t.R).map((x) => [x[1], 'rating', `${p2(x[1])} is the spread for ${rl(x[0])}. Northpass is rated ${rl(t.R)}.`]);
-      rr[2] = judgePct(h, rows[2], t.s, ratDiag, { otherMsg: `Find the ${rl(t.R)} line in the spread table.`, closeMsg: `Close. Copy the ${rl(t.R)} line of the spread table exactly.` });
-      rr[3] = judgePct(h, rows[3], t.cost, [[t.tsy, 'tsyonly', `Add the default spread to the Treasury yield: ${p2(t.tsy)} + ${p2(t.s)}.`], [t.s, 'sonly', `Add the Treasury yield to the spread: ${p2(t.tsy)} + ${p2(t.s)}.`], [t.tsy - t.s, 'minus', `Add the spread to the Treasury yield: ${p2(t.tsy)} + ${p2(t.s)}. Lenders want more from Northpass than from the government, not less.`]],
-        { otherMsg: `Treasury yield + default spread: ${p2(t.tsy)} + ${p2(t.s)}.` });
-      const iv = h.parseMoney(rows[4]);
-      rr[4] = h.judgeNumber(iv, t.interest, [[t.X * 1e6 * t.cost, 'pct', `Turn the rate into a decimal first: ${p2(t.cost)} is ${(t.cost / 100).toFixed(4)}.`], [t.X * t.cost / 100, 'millions', `Give the amount in dollars, like ${Math.round(t.interest).toLocaleString('en-US')}, or add an m for millions.`],
-        [t.X * 1e6 * t.tsy / 100, 'tsyonly', `Use the estimated borrowing cost, ${p2(t.cost)}, not the Treasury yield alone.`], [t.X * 1e6 * t.s / 100, 'sonly', `Use the estimated borrowing cost, ${p2(t.cost)}, not the spread alone.`]],
-        { otherMsg: `${mil(t.X)} × ${(t.cost / 100).toFixed(4)}.` });
-      const bad = [1, 2, 3, 4].find((y) => !rr[y].ok);
-      if (bad) return { ok: false, rowRes: rr, msg: `${['', 'Treasury yield', 'Default spread', 'Borrowing cost', 'Yearly interest'][bad]}: ${rr[bad].msg}` };
-      return { ok: true, rowRes: rr };
-    }
+    return { ok: true, rowRes };
   }
 
   function helpText(t, lvl) {
-    if (t.id === 't1') return lvl === 1 ? `Yearly coupon: ${pc(t.c)} × $1,000 = ${m2(t.C)}. Value today of the coupons: ${m2(t.C)} × ${t.af.toFixed(4)} = ${m2(t.PVc)}.`
-      : `Coupon ${m2(t.C)}. Coupons ${m2(t.C)} × ${t.af.toFixed(4)} = ${m2(t.PVc)}. Face value $1,000 ÷ ${g1(t.y)}^${t.n} = ${m2(t.PVf)}. Price ${m2(t.PVc)} + ${m2(t.PVf)} = ${m2(t.P)}.`;
-    if (t.id === 't2') return lvl === 1 ? `Coupons at the new rate: ${m(t.C)} × ${t.af2.toFixed(4)} = ${m2(t.C * t.af2)}. Face value: $1,000 ÷ ${g1(t.y2)}^${t.n} = ${m2(faceAt(t.y2, t.n))}.`
-      : `${m2(t.C * t.af2)} + ${m2(faceAt(t.y2, t.n))} = ${m2(t.P2)}. That is ${t.P2 < 1000 ? 'below' : 'above'} $1,000, so the bond sells at a ${t.decision}.`;
-    if (t.id === 't3') return lvl === 1 ? `${t.nS}-year bond: ${m(10 * t.k)} × ${t.afS.toFixed(4)} + $1,000 ÷ ${g1(t.y3)}^${t.nS} = ${m2(t.pS)}.`
-      : `${t.nS}-year bond: ${m2(t.pS)}, a change of ${sg1(t.pS / 10 - 100)}.<br>${t.nL}-year bond: ${m(10 * t.k)} × ${t.afL.toFixed(4)} + $1,000 ÷ ${g1(t.y3)}^${t.nL} = ${m2(t.pL)}, a change of ${sg1(t.pL / 10 - 100)}. The long bond lost more.`;
-    if (t.id === 't4') return lvl === 1 ? `Start at the coupon rate, ${pc(t.c4)}. There the bond is worth $1,000, more than its ${m2(t.P4)} price, so the yield is higher. Move the slider up until the value matches the price.`
-      : `The yield is about ${p2(t.y4)}. At that rate the bond is worth ${m2(price(t.c4, t.y4, t.n4, false))}. In a spreadsheet, <code>=RATE(${t.n4}, ${10 * t.c4}, -${t.P4.toFixed(2)}, 1000)</code> gives the same. Lenders would demand about this yield on a new ${t.n4}-year loan.`;
-    if (t.id === 't5') return lvl === 1 ? `Treasury yield for ${t.M} years: ${p2(t.tsy)}. Default spread for ${rl(t.R)}: ${p2(t.s)}.`
-      : `Borrowing cost: ${p2(t.tsy)} + ${p2(t.s)} = ${p2(t.cost)}. Yearly interest: ${mil(t.X)} × ${(t.cost / 100).toFixed(4)} = ${m(t.interest)}.`;
+    const lines = linesFor(t), blanks = lines.filter((l) => l.input);
+    const say = (l) => `${l.label}: ${l.calc} = ${SHOW[l.kind](l.x)}${l.typed && l.input ? ` (in Desmos, <code>${l.typed}</code>)` : ''}`;
+    return lvl === 1 ? say(blanks[0]) : lines.map(say).join('<br>');
   }
   function praise(t) {
-    if (t.id === 't1') return `Investors would pay ${m2(t.P)} for each $1,000 bond, ${t.P < 1000 ? 'less than face value, because the coupon is below the market rate' : 'more than face value, because the coupon is above the market rate'}.`;
-    if (t.id === 't2') return `A rise of ${t.d2} point${t.d2 === 1 ? '' : 's'} cut the price from ${m2(t.P)} to ${m2(t.P2)}. The coupons did not change, so buyers paid less until the bond earns ${pc(t.y2)}.`;
-    if (t.id === 't3') return `The ${t.nS}-year bond fell ${(100 - t.pS / 10).toFixed(1)}%, but the ${t.nL}-year bond fell ${(100 - t.pL / 10).toFixed(1)}%. The long bond pays less than new bonds for many more years.`;
-    if (t.id === 't4') return `Lenders demand about ${p2(t.y4)} from Northpass today, not the ${pc(t.c4)} coupon. That yield is Northpass’s cost of debt for ${t.n4} years.`;
-    if (t.id === 't5') return `A ${t.M}-year loan would cost Northpass about ${p2(t.cost)}, or ${m(t.interest)} a year. Its ${t.n4}-year bond yields ${p2(t.y4)}, so the longer loan costs a little more, as the Treasury yields do.`;
+    if (t.id === 'p1') return `Lenders who pay ${m(t.P)} for this bond earn exactly the ${t.y}% they demand today.`;
+    if (t.id === 'p2') return `At ${t.y}%, the bond is worth ${m(t.P)}, ${t.P < 1000 ? 'below' : 'above'} its $1,000 face value because its ${t.c}% coupon is ${t.c < t.y ? 'less' : 'more'} than lenders demand.`;
+    if (t.id === 'r1' || t.id === 'r2') return `Rates ${t.y > t.k ? 'rose' : 'fell'} from ${t.k}% to ${t.y}%, so the bond’s price ${t.y > t.k ? 'fell' : 'rose'} from $1,000 to ${m(t.P)}. Northpass still pays the same ${m0(t.C)} coupon each year.`;
+    if (t.id === 's1') return `A ${t.n}-year loan costs Northpass about ${p2(t.cost)}, or ${m0(t.interest)} a year on $${t.X} million.`;
+    if (t.id === 's2') return `The lodge loan costs about ${p2(t.cost)}, or ${m0(t.interest)} a year. That is the rate the lodge has to beat.`;
   }
+  const fmtIn = (l, k) => (l.kind === 'pct' ? p2(l.x * k) : l.kind === 'factor' ? (l.x * k).toFixed(4) : String(Math.round(l.x * k * 100) / 100));
   function selfAnswer(t) {
-    if (t.id === 't1') return { rows: [null, String(t.C), t.PVc.toFixed(2), t.PVf.toFixed(2), t.P.toFixed(2)] };
-    if (t.id === 't2') return { value: t.P2.toFixed(2), choice: t.decision };
-    if (t.id === 't3') return { rows: [null, t.pS.toFixed(2), t.pL.toFixed(2)], choice: t.decision };
-    if (t.id === 't4') return { value: t.y4.toFixed(2), choice: t.decision };
-    if (t.id === 't5') return { rows: [null, t.tsy.toFixed(2), t.s.toFixed(2), t.cost.toFixed(2), String(Math.round(t.interest))] };
+    const rows = []; linesFor(t).forEach((l, i) => { if (l.input) rows[i] = fmtIn(l, 1); });
+    return { rows, choice: t.decision || null };
   }
   function selfWrong(t) {
-    if (t.id === 't1') return { rows: [null, String(t.C), (t.C * t.n).toFixed(2), t.PVf.toFixed(2), (t.C * t.n + t.PVf).toFixed(2)] };
-    if (t.id === 't2') return { value: t.P.toFixed(2), choice: t.decision };
-    if (t.id === 't3') return { rows: [null, t.pL.toFixed(2), t.pS.toFixed(2)], choice: t.decision };
-    if (t.id === 't4') return { value: String(t.c4), choice: t.decision };
-    if (t.id === 't5') { const other = Object.keys(TSY).find((y) => Number(y) !== t.M); return { rows: [null, TSY[other].toFixed(2), t.s.toFixed(2), (TSY[other] + t.s).toFixed(2), String(Math.round(t.X * 1e6 * (TSY[other] + t.s) / 100))] }; }
+    const rows = []; linesFor(t).forEach((l, i) => { if (l.input) rows[i] = fmtIn(l, 1.3); });
+    return { rows, choice: t.decision || null };
   }
 
-  const WALK = {
-    title: 'How Delphine prices a simple bond',
-    intro: '<p>Delphine starts every new analyst on the same simple bond. It has a <b>$1,000</b> face value, a <b>6%</b> coupon paid once a year, and <b>3 years</b> to maturity.</p>',
-    render(stage) {
-      const T = (cap, head, rows, hl) => `<div class="tw"><table class="cf"><caption>${cap}</caption><thead><tr>${head.map((x, i) => `<th scope="col"${i === 0 ? ' style="text-align:left"' : ''}>${x}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr class="${hl === i ? 'hl' : ''}">${r.map((c, j) => `<td class="${j === 0 ? 'lbl' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-      if (stage === 0) return T('What the bond pays', ['Year', 'Coupon', 'Face value', 'Total'], [['1', '$60', '', '$60'], ['2', '$60', '', '$60'], ['3', '$60', '$1,000', '$1,060']]);
-      if (stage <= 2) {
-        const rows = [['Value today of the coupons', '$60 × 2.6243 = $157.46'], ['Value today of the face value', '$1,000 ÷ 1.07³ = $816.30'], ['<b>Price</b>', '<b>$973.76</b>']];
-        if (stage === 1) return T('The price when lenders demand 7%', ['Line', 'At 7%'], rows, 2);
-        const r8 = ['$60 × 2.5771 = $154.63', '$1,000 ÷ 1.08³ = $793.83', '<b>$948.46</b>'];
-        return T('The same bond when lenders demand 8%', ['Line', 'At 7%', 'At 8%'], rows.map((r, i) => r.concat([r8[i]])), 2);
-      }
-      if (stage === 3) return T('Finding the yield when the price is $973.76', ['Rate tried', 'Value of the bond', 'Compared with $973.76'], [['6%', '$1,000.00', 'Too high, try a higher rate'], ['8%', '$948.46', 'Too low, try a lower rate'], ['7%', '$973.76', 'A match']], 2);
-      return T('What the bond tells Delphine', ['Rate', 'What it is'], [['6% coupon', 'Fixed when the bond was sold'], ['7% yield to maturity', 'What lenders demand today'], ['<b>Cost of debt</b>', '<b>7%, the yield</b>']], 2);
-    },
-    stages: [
-      { t: 'List what the bond pays', p: 'The coupon is 6% of $1,000, so the bond pays $60 at the end of each year. At the end of year 3 it also repays the $1,000 face value.' },
-      { t: 'Price it', p: 'Lenders demand 7%. Value the coupons with the annuity factor for 7% and 3 years, 2.6243, and discount the face value. The price is the sum, <b>$973.76</b>, below $1,000 because the 6% coupon is less than the 7% lenders want.' },
-      { t: 'Raise the rate', p: 'Rates rise to 8%. The coupons and the face value are both worth less today, so the price falls to <b>$948.46</b>. When rates go up, bond prices go down.' },
-      { t: 'Find the yield', p: 'Now turn it around: the bond trades at $973.76, and Delphine wants the rate lenders demand. Try rates until the bond’s value matches the price. At 7% it matches, so the <b>yield to maturity</b> is 7%. In a spreadsheet, <code>=RATE(3, 60, -973.76, 1000)</code> gives 7%.' },
-      { t: 'Read the yield as a cost', p: 'The 6% coupon was set when the bond was sold. The 7% yield is what lenders demand today, so a new 3-year loan would cost about 7%. That yield is the company’s <b>cost of debt</b>.' },
-    ],
-  };
-
   root.DESK = {
-    app: 'finan4-u8-bond-desk', version: 2, seedVersion: 2, salt: 'rize-finan4-u8-bond:4c91d7', points: 20,
-    storageKey: 'rize-finan4-u8-bond-v1', filePrefix: 'BondDesk', ROUND,
+    app: 'finan4-u8-bond-desk', version: 3, seedVersion: 3, salt: 'rize-finan4-u8-bond:7e2a50', points: 20,
+    storageKey: 'rize-finan4-u8-bonds-v3', filePrefix: 'BondDesk', TSY, SPREAD, BANNED, linesFor,
     verifyUrl: 'https://rizecomputerscience.github.io/finan4-bond-desk/verify.html',
-    calcPlaceholder: '60*2.6243+1000/1.07^3',
-    calcHint: 'Type or tap. Use * to multiply, / to divide and ^ for a power, so 60*2.6243+1000/1.07^3 is the price of a 3-year bond with a 6% coupon when lenders demand 7%.',
+    calcPlaceholder: '1000/1.07^8',
     story: { title: 'The Bond Desk', kicker: 'Corporate Finance, Unit 8', company: 'Northpass Resorts', team: 'Treasury Team',
       from: 'Delphine Tamura', fromTitle: 'treasurer, Northpass Resorts',
-      dek: 'You have joined the treasury team at Northpass Resorts, a company that runs ski resorts. Northpass pays for new lifts and lodges partly with borrowed money. Delphine Tamura, the treasurer, wants you to price its bonds and work out what it costs Northpass to borrow today.',
-      whatBox: '<b>A bond is a loan that investors can buy and sell.</b> Its price is the value today of its coupons and its face value. When rates rise, bond prices fall, and the yield on a company’s bonds shows what it costs that company to borrow.',
-      stepsLine: 'There are eleven steps: a worked example, five problems with three one-question checks between them, one exam-style question, and a short note to Delphine.' },
-    steps: STEPS, quiz: QUIZ, walk: WALK, buildTasks, taskView, judgeTask, helpText, praise, selfAnswer, selfWrong,
+      dek: 'Northpass Resorts runs ski resorts and wants to borrow money to build a new lodge. Before its board votes, Delphine Tamura, the treasurer, needs two answers: what Northpass’s older bonds are worth now that rates have moved, and what a new loan would cost. You work out both with her.',
+      whatBox: '',
+      stepsLine: 'Nine short steps. Each shows a worked example in the same table you fill in, then you do the same calculation with your own numbers.' },
+    steps: STEPS, quiz: QUIZ, walk: null, buildTasks, taskView, judgeTask, helpText, praise, selfAnswer, selfWrong,
     note: { title: 'A note for the board', label: 'Your note to Delphine', minWords: 30, receiptHeading: 'Note to the treasurer',
-      prompt: 'Northpass’s board will vote next month on borrowing for the new lodge. Write Delphine a short note. Say what interest rate the plan should assume and why it should not use the coupon on Northpass’s older bonds. Then say what happens to the price of those older bonds when rates rise, and whether that changes the interest Northpass pays.' },
+      prompt: 'Northpass’s board votes next month on the lodge loan. Write Delphine a short note that says what interest rate the plan should assume and why it should not use the coupon on Northpass’s older bonds. Then say what rising rates did to the price of those older bonds.' },
   };
 })(typeof window !== 'undefined' ? window : globalThis);
