@@ -27,11 +27,11 @@
         'The coupon is fixed for the bond’s life. The price falls because a new bond pays $70 a year instead of $50.'] },
     { title: 'Exam-style question',
       q: 'A bond has a $1,000 face value, pays a 5% coupon once a year and matures in 6 years. Lenders now demand 7%. What is its price?',
-      options: ['About $904.66', 'About $966.34', 'About $1,238.32', 'About $1,000.00'],
+      options: ['About $904.67', 'About $966.34', 'About $1,238.33', 'About $1,000.00'],
       answer: 0,
-      why: ['Right. The annuity factor for 7% and 6 years is 4.7665, so the coupons are worth $50 × 4.7665 = $238.32 today. The face value is worth $1,000 ÷ 1.07⁶ = $666.34, so the price is $904.66. Exam questions look like this one.',
+      why: ['Right. The annuity factor for 7% and 6 years is 4.7665, so the coupons are worth $50 × 4.7665 = $238.33 today. The face value is worth $1,000 ÷ 1.07⁶ = $666.34, so the price is $904.67. Exam questions look like this one.',
         '$966.34 adds up the six $50 coupons without discounting them. Multiply $50 by the annuity factor for 7% and 6 years, 4.7665, instead.',
-        '$1,238.32 adds the full $1,000 face value without discounting it. The $1,000 arrives in 6 years, so divide it by 1.07⁶.',
+        '$1,238.33 adds the full $1,000 face value without discounting it. The $1,000 arrives in 6 years, so divide it by 1.07⁶.',
         '$1,000 is the price only when the market rate equals the coupon rate. Lenders demand 7%, more than the 5% coupon, so the price is below $1,000.'] },
   ];
 
