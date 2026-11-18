@@ -1,0 +1,67 @@
+/* The Bond Desk theme (FINAN IV Unit 8), 2026-11-18. Loaded after desk.css; changes the look only.
+   An engraved bond certificate and the treasurer's ledger: oxblood and steel ink on pale security paper,
+   roman inscription capitals for the title, steps as detachable coupons (perforated until you finish them),
+   ledger tables with a margin rule and an accountant's double underline. Dark mode is the vault. */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Courier+Prime:wght@400;700&display=swap');
+:root{
+  --bg:#ECEEF3;--surface:#FBFBFD;--panel:#E2E5ED;--line:#C8CCD8;--line-strong:#686E85;
+  --ink:#1E1A26;--muted:#4F4C60;--brand:#6E1E2F;--brand-ink:#FFFFFF;--brand-tint:#F3E5E8;
+  --receipt-frame:#6E1E2F;--receipt-paper:#F6F1E6;
+  --ok:#1C6B3E;--ok-tint:#E0F0E5;--bad:#A3241C;--bad-tint:#FBE6E3;--hint:#34506E;--hint-tint:#E3EAF2;--focus:#1E1A26;--hl:#F6E5B5;--ok-ink:#FFFFFF;
+  --gold:#A67C2E;--steel:#34506E;--ledger:#C7D3E2;--engrave:rgba(52,80,110,.05);
+  --serif:'Spectral','Iowan Old Style',Georgia,serif;--display:'Cinzel','Trajan Pro',Georgia,serif;
+  --mono:'Courier Prime','Courier New',ui-monospace,monospace;}
+:root[data-theme="dark"]{
+  --bg:#15121A;--surface:#1E1A24;--panel:#28222F;--line:#3B3447;--line-strong:#8A819B;
+  --ink:#EFE9F0;--muted:#B9B0C2;--brand:#EBAAB7;--brand-ink:#2A1119;--brand-tint:#3A1F29;
+  --ok:#7DD49A;--ok-tint:#15301F;--bad:#FF8D84;--bad-tint:#42201E;--hint:#A9C1DA;--hint-tint:#1C2838;--focus:#EFE9F0;--hl:#4A3F1C;--ok-ink:#15121A;
+  --gold:#D6B46E;--steel:#9FB8D3;--ledger:#343A4C;--engrave:rgba(214,180,110,.035);}
+
+/* security paper: fine engraved horizontal lines */
+body{font-size:18px;background-color:var(--bg);background-image:repeating-linear-gradient(0deg,transparent 0 3px,var(--engrave) 3px 4px);
+  display:flex;flex-direction:column;min-height:100vh}
+header.bar{order:-2;background:var(--bg);border-bottom:4px double var(--brand)}
+.brand{font-style:normal}
+.brand b{font:700 15px var(--display);letter-spacing:.08em}
+
+/* header art: only on the first screen */
+.desk-art{order:-1;display:none;width:calc(100% - 2.2rem);max-width:calc(820px - 2.2rem);height:auto;margin:1.6rem auto 0;box-shadow:0 2px 0 var(--line)}
+body:has(#startBox) .desk-art{display:block}
+@media (max-width:600px){.desk-art{aspect-ratio:2.3/1;object-fit:cover;object-position:0 50%}}
+:root[data-theme="dark"] .desk-art{filter:brightness(.9)}
+
+/* steps as coupons: perforated edge until finished */
+nav.steps{padding-top:.55rem}
+nav.steps ol{gap:8px}
+nav.steps button{border-radius:2px;border:1.5px dashed var(--line-strong);font:600 14px var(--serif);padding:.22rem .75rem}
+nav.steps button.done{border-style:solid}
+nav.steps button.done{background:var(--ok);border-color:var(--ok);color:var(--ok-ink)}
+nav.steps button.done::before{content:"\2713\00a0";content:"\2713\00a0" / "done: "}
+nav.steps button[aria-current="step"]{outline:2px solid var(--gold);outline-offset:2px}
+
+/* type: inscription capitals for titles, a gold double rule under the desk name */
+h1{font:600 clamp(36px,6vw,58px)/1.05 var(--display);letter-spacing:.04em;color:var(--brand)}
+h1::after{content:"";display:block;width:9rem;max-width:40%;margin-top:.7rem;border-bottom:3px double var(--gold)}
+h2{font:600 26px/1.2 var(--display);letter-spacing:.02em}
+.kicker{font-size:16px;letter-spacing:.01em}
+.dek{font-size:20px;color:var(--ink)}
+.points{font:600 46px/1 var(--display);color:var(--brand);letter-spacing:.03em}
+
+/* cards: a certificate frame, oxblood outside, gold hairline inside */
+.memo{border-radius:2px;border:1px solid var(--brand);box-shadow:inset 0 0 0 5px var(--surface),inset 0 0 0 6px var(--gold)}
+.box{border-radius:2px;border:1px solid var(--line)}
+.stamp{border-radius:999px;padding:.05rem .6rem;border-style:double;border-width:3px}
+.btn,.btn-calc,.btn-quiet{border-radius:2px}
+.btn{letter-spacing:.02em}
+.choice span{border-radius:2px}
+
+/* tables: the treasurer's ledger */
+table.cf{font-family:var(--mono)}
+table.cf caption{font-style:italic}
+table.cf th{font:italic 600 14.5px var(--serif);color:var(--brand);border-bottom:3px double var(--brand)}
+table.cf td{border-bottom:1px solid var(--ledger)}
+table.cf th:first-child,table.cf td:first-child{border-right:1px solid var(--brand)}
+table.cf tfoot tr.total td{border-top:1px solid var(--ink);border-bottom:3px double var(--ink)}
+.formula{border:1px solid var(--line);border-radius:2px}
+.calc-strip{border-left-color:var(--gold)}
+details.example{border-left-color:var(--gold);border-radius:2px}

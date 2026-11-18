@@ -41,7 +41,7 @@
     { id: 'r1', label: 'Rates go up', kind: 'task' },
     { id: 'q1', label: 'Quick check', kind: 'check', quiz: 0 },
     { id: 'r2', label: 'Rates move again', kind: 'task' },
-    { id: 's1', label: 'What a loan costs', kind: 'task' },
+    { id: 's1', label: 'The cost of debt', kind: 'task' },
     { id: 's2', label: 'The lodge loan', kind: 'task' },
     { id: 'q2', label: 'Exam-style question', kind: 'check', quiz: 1 },
     { id: 'note', label: 'Your note', kind: 'note' },
@@ -143,23 +143,23 @@
 
   // The two lookup tables run down the page, side by side, so they fit a phone screen.
   const vt = (cap, head, rows) => `<div class="tw" style="flex:0 1 13rem"><table class="cf" style="width:auto;min-width:11rem"><caption>${cap}</caption><thead><tr><th scope="col">${head[0]}</th><th scope="col">${head[1]}</th></tr></thead><tbody>${rows.map(([k, v]) => `<tr><td class="lbl">${k}</td><td>${v.toFixed(2)}%</td></tr>`).join('')}</tbody></table></div>`;
-  const tables = () => `<div style="display:flex;flex-wrap:wrap;gap:0 2rem">${vt('Treasury yields, January 30, 2026', ['Years', 'Yield'], Object.entries(TSY))}${vt('Default spreads, January 2026', ['S&amp;P rating', 'Spread'], Object.entries(SPREAD))}</div>`;
+  const tables = () => `<div style="display:flex;flex-wrap:wrap;gap:0 2rem">${vt('Treasury yields, January 30, 2026', ['Years', 'Yield'], Object.entries(TSY))}${vt('Default spreads, January 2026', ['S&amp;P credit rating', 'Spread'], Object.entries(SPREAD))}</div>`;
 
   const PROBLEM = {
     p1: (t) => ({ title: 'Price a bond', place: 'Delphine starts with one of Northpass’s older bonds.',
-      body: `<p>The bond has a <b>$1,000</b> face value and a <b>${t.c}%</b> coupon rate, with <b>${t.n} years</b> left. Lenders now demand <b>${t.y}%</b>. What is it worth today? The first three lines are done for you.</p>` }),
+      body: `<p>The bond has a <b>$1,000</b> face value and a <b>${t.c}%</b> coupon rate, with <b>${t.n} years</b> left to maturity. Lenders now demand <b>${t.y}%</b>. What is it worth today? The first three lines are done for you.</p>` }),
     p2: (t) => ({ title: 'Price your own bond', place: 'Northpass has a second older bond.',
-      body: `<p>This bond has a <b>$1,000</b> face value and a <b>${t.c}%</b> coupon rate, with <b>${t.n} years</b> left. Lenders now demand <b>${t.y}%</b>. What is it worth today?</p>` }),
+      body: `<p>This bond has a <b>$1,000</b> face value and a <b>${t.c}%</b> coupon rate, with <b>${t.n} years</b> left to maturity. Lenders now demand <b>${t.y}%</b>. What is it worth today?</p>` }),
     r1: (t) => ({ title: 'Rates go up', place: 'Northpass sold a newer bond at its full face value.',
       body: `<p>Northpass sold a bond with a <b>${t.k}%</b> coupon rate for <b>$1,000</b>, when lenders demanded ${t.k}%. It has <b>${t.n} years</b> left, and lenders now demand <b>${t.y}%</b>. What is it worth now? Three lines are done for you.</p>`,
       choice: { legend: 'Compared with the $1,000 it sold for, the price has', options: [['fell', 'Fallen'], ['rose', 'Risen']] } }),
     r2: (t) => ({ title: 'Rates move again', place: 'Rates have moved on Northpass’s newest bond too.',
       body: `<p>Northpass sold a bond with a <b>${t.k}%</b> coupon rate for <b>$1,000</b>, when lenders demanded ${t.k}%. It has <b>${t.n} years</b> left, and lenders now demand <b>${t.y}%</b>. What is it worth now?</p>`,
       choice: { legend: 'Compared with the $1,000 it sold for, the price has', options: [['fell', 'Fallen'], ['rose', 'Risen']] } }),
-    s1: (t) => ({ title: 'What a loan costs', place: 'Northpass needs new snowmaking machines.',
-      body: `<p>Northpass is rated <b>${t.R}</b> and wants to borrow <b>$${t.X} million</b> for <b>${t.n} years</b>. What will lenders charge, and what is the interest each year? The Treasury yield and the spread are done for you.</p>` }),
+    s1: (t) => ({ title: 'The cost of debt', place: 'Northpass needs new snowmaking machines.',
+      body: `<p>Northpass has a <b>${t.R}</b> credit rating and wants to borrow <b>$${t.X} million</b> for <b>${t.n} years</b>. What is its cost of debt, and what is the interest each year? The Treasury yield and the default spread are done for you.</p>` }),
     s2: (t) => ({ title: 'The lodge loan', place: 'The new lodge needs a longer loan.',
-      body: `<p>Northpass, rated <b>${t.R}</b>, wants to borrow <b>$${t.X} million</b> for <b>${t.n} years</b>. Use the two tables to find what lenders will charge and the interest each year.</p>${tables()}` }),
+      body: `<p>Northpass, with its <b>${t.R}</b> credit rating, wants to borrow <b>$${t.X} million</b> for <b>${t.n} years</b>. Use the two tables to find its cost of debt and the interest each year.</p>${tables()}` }),
   };
 
   function taskView(t, L, h) {
@@ -196,7 +196,7 @@
     } else {
       const otherT = Object.keys(TSY).filter((k) => +k !== t.n), otherR = Object.keys(SPREAD).filter((r) => r !== t.R);
       if (/^Treasury/.test(l.label)) otherT.forEach((k) => D.push([TSY[k] / 100, 'tsyn', `That is the ${k}-year Treasury yield. The loan runs ${t.n} years.`]));
-      if (/^Default spread/.test(l.label)) otherR.forEach((r) => D.push([SPREAD[r] / 100, 'sprr', `That is the spread for ${r}. Northpass is rated ${t.R}.`]));
+      if (/^Default spread/.test(l.label)) otherR.forEach((r) => D.push([SPREAD[r] / 100, 'sprr', `That is the spread for ${r}. Northpass’s credit rating is ${t.R}.`]));
       if (l.label === 'Borrowing cost') D.push([t.tsy, 'tsy', 'That is the Treasury yield alone. Add the default spread.'], [t.spr, 'spr', 'That is the spread alone. Add it to the Treasury yield.'],
         [t.tsy - t.spr, 'minus', `Add the spread, don’t subtract it: ${p2(t.tsy)} + ${p2(t.spr)}.`]);
       if (l.label === 'Yearly interest') D.push([t.X * 1e6 * t.spr, 'spr', `That charges only the spread. Multiply $${t.X} million by the whole borrowing cost.`],
@@ -237,10 +237,10 @@
   }
   function praise(t) {
     if (t.id === 'p1') return `Lenders who pay ${m(t.P)} for this bond earn exactly the ${t.y}% they demand today.`;
-    if (t.id === 'p2') return `At ${t.y}%, the bond is worth ${m(t.P)}, ${t.P < 1000 ? 'below' : 'above'} its $1,000 face value because its ${t.c}% coupon is ${t.c < t.y ? 'less' : 'more'} than lenders demand.`;
+    if (t.id === 'p2') return `At ${t.y}%, the bond is worth ${m(t.P)}, ${t.P < 1000 ? 'below' : 'above'} its $1,000 face value because its ${t.c}% coupon rate is ${t.c < t.y ? 'less' : 'more'} than lenders demand.`;
     if (t.id === 'r1' || t.id === 'r2') return `Rates ${t.y > t.k ? 'rose' : 'fell'} from ${t.k}% to ${t.y}%, so the bond’s price ${t.y > t.k ? 'fell' : 'rose'} from $1,000 to ${m(t.P)}. Northpass still pays the same ${m0(t.C)} coupon each year.`;
-    if (t.id === 's1') return `A ${t.n}-year loan costs Northpass about ${p2(t.cost)}, or ${m0(t.interest)} a year on $${t.X} million.`;
-    if (t.id === 's2') return `The lodge loan costs about ${p2(t.cost)}, or ${m0(t.interest)} a year. That is the rate the lodge has to beat.`;
+    if (t.id === 's1') return `On a ${t.n}-year loan, Northpass’s cost of debt is about ${p2(t.cost)}, or ${m0(t.interest)} a year on $${t.X} million.`;
+    if (t.id === 's2') return `On the lodge loan, Northpass’s cost of debt is about ${p2(t.cost)}, or ${m0(t.interest)} a year, so the lodge has to earn more than ${p2(t.cost)}.`;
   }
   const fmtIn = (l, k) => (l.kind === 'pct' ? p2(l.x * k) : l.kind === 'factor' ? (l.x * k).toFixed(4) : String(Math.round(l.x * k * 100) / 100));
   function selfAnswer(t) {
@@ -259,11 +259,11 @@
     calcPlaceholder: '1000/1.07^8',
     story: { title: 'The Bond Desk', kicker: 'Corporate Finance, Unit 8', company: 'Northpass Resorts', team: 'Treasury Team',
       from: 'Delphine Tamura', fromTitle: 'treasurer, Northpass Resorts',
-      dek: 'Northpass Resorts runs ski resorts and wants to borrow money to build a new lodge. Before its board votes, Delphine Tamura, the treasurer, needs two answers: what Northpass’s older bonds are worth now that rates have moved, and what a new loan would cost. You work out both with her.',
+      dek: 'Northpass Resorts runs ski resorts and wants to borrow money to build a new lodge. Before its board votes, Delphine Tamura, the treasurer, needs two answers: what Northpass’s older bonds are worth now that rates have moved, and its cost of debt on a new loan. You work out both with her.',
       whatBox: '',
       stepsLine: 'Nine short steps. Each shows a worked example in the same table you fill in, then you do the same calculation with your own numbers.' },
     steps: STEPS, quiz: QUIZ, walk: null, buildTasks, taskView, judgeTask, helpText, praise, selfAnswer, selfWrong,
     note: { title: 'A note for the board', label: 'Your note to Delphine', minWords: 30, receiptHeading: 'Note to the treasurer',
-      prompt: 'Northpass’s board votes next month on the lodge loan. Write Delphine a short note that says what interest rate the plan should assume and why it should not use the coupon on Northpass’s older bonds. Then say what rising rates did to the price of those older bonds.' },
+      prompt: 'Northpass’s board votes next month on the lodge loan. Write Delphine a short note that says what cost of debt the plan should assume and why it should not use the coupon rate on Northpass’s older bonds. Then say what rising rates did to the price of those older bonds.' },
   };
 })(typeof window !== 'undefined' ? window : globalThis);
